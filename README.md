@@ -1,2 +1,4 @@
 # CourseOnCharm-
-Source code for assignments in the charm++ class - fall of 2014
+
+Some examples using charm++
+http://charm.cs.illinois.edu/research/charm

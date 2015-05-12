@@ -1,0 +1,31 @@
+mainmodule ldb
+{
+  readonly int nChares;
+  readonly int nRandMin;
+  readonly int nRandMax;
+  readonly CProxy_Main mainProxy;
+  mainchare Main
+  {
+   entry Main(CkArgMsg *m);
+   entry [reductiontarget] void PrefixSumDone(int total); 
+   /*
+    the callback is to avoid situaltions when the buffer is not created in certain
+    chares but RecvArrMsg arrives. This will require buffering these before the 
+    pLBArray buffer is created  
+   */
+   entry [reductiontarget] void BuffCreationDone();
+   entry [reductiontarget] void done(int xor_); // after it prints the numbers
+   entry [reductiontarget] void xor_original(int xor_);
+  }; 
+  
+  array [1D] IntArr
+  {
+    entry IntArr();
+    entry void PrefixRun(int value);
+    entry void PrefixRecVal(int stage,int value);
+    entry void LoadBalance(int n, int start[n], int end[n]);
+    entry void CreateBuffer(double avg);
+    entry void RecvArrMsg(int n,int data[n],int startIndex);
+    entry [reductiontarget] void PrintLB(); 
+  };
+};

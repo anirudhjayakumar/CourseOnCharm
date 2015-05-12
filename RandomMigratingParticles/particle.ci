@@ -1,0 +1,60 @@
+mainmodule ParticleExercise {
+  include "pup_stl.h";
+  include "Particle.h";
+  readonly CProxy_Main mainProxy;
+  readonly CProxy_Cell cellProxy;
+  readonly int particlesPerCell;
+  readonly int cellDimension;
+  initnode void register_maxsum_Int();
+  mainchare Main {
+    entry Main(CkArgMsg* m); 
+    entry [reductiontarget] void done();
+    entry void recvParticleCounts(CkReductionMsg *msg);
+    //TODO: add an entry methods to receive the reductions
+ 
+  };
+
+  array [2D] Cell {
+    entry Cell(void);
+    entry void updateNeighbor(int iter, std::vector<Particle> incoming);
+    entry void UpdateParticles();
+    entry void SendParticlesToNeighbors();
+    entry void ResumeFromSync(); 
+    // Main computation
+    entry void run() {
+        for(iteration=0; iteration<ITERATION; iteration++)
+        {
+
+            serial "update_parts" {
+              UpdateParticles();
+            }
+            serial "send_parts" {
+              SendParticlesToNeighbors();
+            }
+
+            for(recv_count=0; recv_count < 8;++recv_count)
+            {
+              when updateNeighbor[iteration](int iter,std::vector<Particle> incoming) serial "process_parts" {
+               // CkPrintf("[%d,%d]: Received particles: %d\n",thisIndex.x,thisIndex.y,recv_count);
+                particles.insert(particles.end(), incoming.begin(), incoming.end());
+              }
+            }
+          
+            serial "contribute" {
+              if((iteration)%10 == 0)
+              {
+                //CkPrintf("[%d,%d]: SendProgress(): Iter=%d\n",thisIndex.x,    thisIndex.y,iteration);
+                SendProgress();
+              }
+            }
+            if (iteration % 10 == 0) { 
+              serial "AtSync" { AtSync(); } when ResumeFromSync() {} 
+            }
+        }//end of the iteration loop
+
+        serial "terminate" {
+          contribute(0, NULL, CkReduction::nop, CkCallback(CkReductionTarget(Main, done), mainProxy));
+        }
+    };
+  };
+};
